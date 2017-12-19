@@ -19,15 +19,6 @@ class QA_LSTM(nn.Module):
         super(QA_LSTM, self).__init__()
         self.word_embd = WordEmbedding(args)
         self.lstm = nn.LSTM(args.embd_size, args.hidden_size, batch_first=True, bidirectional=True)
-        self.cos = nn.CosineSimilarity(dim=1)
-
-    def reduce_mean(self, x):
-        bs = x.size(0)
-        x = x.contiguous()
-        x = x.view(bs, -1) # (bs, L*2H)
-        x = torch.mean(x, 1)
-        x = x.unsqueeze(1) # (bs, 1)
-        return x
 
     def forward(self, q, a):
         # embedding
@@ -38,7 +29,7 @@ class QA_LSTM(nn.Module):
         a, _h = self.lstm(a) # (bs, L, 2H)
 
         # mean/maxpooling
-        q = self.reduce_mean(q) # (bs,)
-        a = self.reduce_mean(a) # (bs,)
+        q = torch.mean(q, 1) # (bs, 2H)
+        a = torch.mean(a, 1) # (bs, 2H)
 
-        return self.cos(q, a)
+        return (q, a)

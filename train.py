@@ -1,6 +1,7 @@
 import copy
 import random
 import torch
+import torch.nn as nn
 from gensim.models.keyedvectors import KeyedVectors
 from utils import save_pickle, load_pickle, load_data, load_vocabulary, Config, load_embd_weights, to_var
 from utils import make_vector, padding
@@ -32,9 +33,17 @@ args = Config(**args)
 # pre_embd = load_embd_weights(word2vec, vocab_size, args.embd_size, w2i)
 # save_pickle(pre_embd, 'pre_embd.pickle')
 # args.pre_embd = pre_embd
+cos = nn.CosineSimilarity(dim=1)
+def loss_fn(pos, neg):
+    # print('pos[0]', pos[0])
+    pos_sim = torch.mean(cos(pos[0], pos[1]))
+    neg_sim = torch.mean(cos(neg[0], neg[1]))
+    loss = 2.0 - pos_sim + neg_sim
+    if loss.data[0] < 0:
+        loss.data[0] = 0
+    return loss
 
-
-def train(model, data, optimizer, n_epochs=1, batch_size=32):
+def train(model, data, optimizer, n_epochs=10, batch_size=32):
     # data = copy.deepcopy(data)
     print('len(data)', len(data))
     for epoch in range(n_epochs):
@@ -49,23 +58,18 @@ def train(model, data, optimizer, n_epochs=1, batch_size=32):
             max_ans_len = max(max([len(pp) for pp in p]), max([len(nn) for nn in n]))
             p = make_vector(p, w2i, max_ans_len)
             n = make_vector(n, w2i, max_ans_len)
-            pos_score = model(q, p)
-            pos_score = torch.mean(pos_score)
-            neg_score = model(q, n)
-            neg_score = torch.mean(neg_score)
-            loss = 2.0 - pos_score + neg_score
-            if loss.data[0] < 0:
-                loss.data[0] = 0
+            pos = model(q, p)
+            neg = model(q, n)
+            loss = loss_fn(pos, neg)
             print('loss:', loss.data[0])
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-#             break
-#         break
 
 
 model = QA_LSTM(args)
 if torch.cuda.is_available():
     model.cuda()
-optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=0.01)
+# optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=0.01)
+optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()))
 train(model, data[:10000], optimizer)
