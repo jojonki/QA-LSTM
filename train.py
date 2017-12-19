@@ -34,10 +34,7 @@ args = Config(**args)
 # save_pickle(pre_embd, 'pre_embd.pickle')
 # args.pre_embd = pre_embd
 cos = nn.CosineSimilarity(dim=1)
-def loss_fn(pos, neg):
-    # print('pos[0]', pos[0])
-    pos_sim = torch.mean(cos(pos[0], pos[1]))
-    neg_sim = torch.mean(cos(neg[0], neg[1]))
+def loss_fn(pos_sim, neg_sim):
     loss = 2.0 - pos_sim + neg_sim
     if loss.data[0] < 0:
         loss.data[0] = 0
@@ -58,9 +55,9 @@ def train(model, data, optimizer, n_epochs=10, batch_size=32):
             max_ans_len = max(max([len(pp) for pp in p]), max([len(nn) for nn in n]))
             p = make_vector(p, w2i, max_ans_len)
             n = make_vector(n, w2i, max_ans_len)
-            pos = model(q, p)
-            neg = model(q, n)
-            loss = loss_fn(pos, neg)
+            pos_sim = model(q, p)
+            neg_sim = model(q, n)
+            loss = loss_fn(pos_sim, neg_sim)
             print('loss:', loss.data[0])
             optimizer.zero_grad()
             loss.backward()

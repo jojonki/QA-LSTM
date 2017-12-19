@@ -19,6 +19,7 @@ class QA_LSTM(nn.Module):
         super(QA_LSTM, self).__init__()
         self.word_embd = WordEmbedding(args)
         self.lstm = nn.LSTM(args.embd_size, args.hidden_size, batch_first=True, bidirectional=True)
+        self.cos = nn.CosineSimilarity(dim=1)
 
     def forward(self, q, a):
         # embedding
@@ -32,4 +33,4 @@ class QA_LSTM(nn.Module):
         q = torch.mean(q, 1) # (bs, 2H)
         a = torch.mean(a, 1) # (bs, 2H)
 
-        return (q, a)
+        return torch.mean(self.cos(q, a))
