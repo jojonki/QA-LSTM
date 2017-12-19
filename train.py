@@ -70,7 +70,7 @@ def train(model, data, optimizer, n_epochs=4, batch_size=2):
             pos_batch = make_vector(pos_batch, w2i, max_pos_len)
 
             # sample one negative candidate until getting plus loss value or reaching max sampling count
-            for neg_sampling_ct in range(50): # see 2.3
+            for neg_sampling_ct in range(50): # see 2.3 of insuranceQA's paper
                 neg_batch = [random.choice(d[2]) for d in batch] # choose one negative sample
                 max_neg_len = min(args.max_sent_len, max([len(n) for n in neg_batch]))
                 neg_batch = make_vector(neg_batch, w2i, max_neg_len)
