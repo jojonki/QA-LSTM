@@ -1,6 +1,10 @@
 import pickle
 import numpy as np
 import torch
+from torch.autograd import Variable
+
+
+PAD = '<PAD>' # TODO
 
 
 def save_pickle(d, path):
@@ -36,6 +40,31 @@ def load_vocabulary(vocab_path, label_path):
     return id_to_word, label_to_ans, label_to_ans_text
 
 
+def load_data(fpath, id_to_word, label_to_ans_text):
+    data = []
+    with open(fpath) as f:
+        lines = f.readlines()
+        for l in lines[12:]:
+            d = l.rstrip().split('\t')
+            q = [id_to_word[t] for t in d[1].split(' ')] # question
+            poss = [label_to_ans_text[t] for t in d[2].split(' ')]
+            negs = [label_to_ans_text[t] for t in d[3].split(' ') if t not in d[2]] # ground-truth
+            for pos in poss:
+                for neg in negs:
+                    data.append((q, pos, neg))
+    return data
+
+
+def to_var(x):
+    if torch.cuda.is_available():
+        x = x.cuda()
+    return Variable(x)
+
+
+def to_np(x):
+    return x.data.cpu().numpy()
+
+
 def load_embd_weights(word2vec, vocab_size, embd_size, w2i):
     embedding_matrix = np.zeros((vocab_size, embd_size))
     print('embed_matrix.shape', embedding_matrix.shape)
@@ -47,6 +76,17 @@ def load_embd_weights(word2vec, vocab_size, embd_size, w2i):
             found_ct += 1
     print(found_ct, 'words are found in word2vec. vocab_size is', vocab_size)
     return torch.from_numpy(embedding_matrix).type(torch.FloatTensor)
+
+
+def padding(data, max_sent_len, pad_token):
+    pad_len = max(0, max_sent_len - len(data))
+    data += [pad_token] * pad_len
+    return data
+
+
+def make_vector(data, w2i, seq_len):
+    ret_data = [padding([w2i[w] for w in d], seq_len, w2i[PAD]) for d in data]
+    return to_var(torch.LongTensor(ret_data))
 
 
 class Config(object):
