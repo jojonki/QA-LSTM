@@ -8,8 +8,9 @@ This repo contains the implementation of QA-LSTM in PyTorch. Currently only conc
 
 
 ## Requirements
-- pytorch
-- gensim (word2vec)
+- pytorch 0.3.0
+- tqdm
+- [insuranceQA dataset V2](https://github.com/shuzi/insuranceQA/tree/master/V2)
 
 ## TODOs
 - [ ] Dropout before cosine similality matching
