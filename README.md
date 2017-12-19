@@ -16,4 +16,6 @@ This repo contains the implementation of QA-LSTM in PyTorch. Currently only conc
 - [ ] Dropout before cosine similality matching
 - [ ] 100-dim wordembedding and fine-tune
 - [ ] Add CNN and attention models
+- [ ] Performance analysis
+- [ ] maxpooling
 
