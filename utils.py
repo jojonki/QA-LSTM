@@ -40,18 +40,47 @@ def load_vocabulary(vocab_path, label_path):
     return id_to_word, label_to_ans, label_to_ans_text
 
 
+# def load_data_elmwise(fpath, id_to_word, label_to_ans_text):
+#     data = []
+#     with open(fpath) as f:
+#         lines = f.readlines()
+#         for l in lines:
+#             d = l.rstrip().split('\t')
+#             q = [id_to_word[t] for t in d[1].split(' ')] # question
+#             poss = [label_to_ans_text[t] for t in d[2].split(' ')] # ground-truth
+#             negs = [label_to_ans_text[t] for t in d[3].split(' ') if t not in d[2]] # candidate-pool without ground-truth
+#             for pos in poss:
+#                 for neg in negs:
+#                     data.append((q, pos, neg))
+#     return data
+
+
 def load_data(fpath, id_to_word, label_to_ans_text):
+    data = []
+    with open(fpath) as f:
+        lines = f.readlines()
+        for l in lines:
+            d = l.rstrip().split('\t')
+            q = [id_to_word[t] for t in d[1].split(' ')] # question
+            poss = [label_to_ans_text[t] for t in d[2].split(' ')] # ground-truth
+            negs = [label_to_ans_text[t] for t in d[3].split(' ') if t not in d[2]] # candidate-pool without ground-truth
+            for pos in poss:
+                data.append((q, pos, negs))
+    return data
+
+
+def load_data2(fpath, id_to_word, label_to_ans_text):
     data = []
     with open(fpath) as f:
         lines = f.readlines()
         for l in lines[12:]:
             d = l.rstrip().split('\t')
             q = [id_to_word[t] for t in d[1].split(' ')] # question
-            poss = [label_to_ans_text[t] for t in d[2].split(' ')]
-            negs = [label_to_ans_text[t] for t in d[3].split(' ') if t not in d[2]] # ground-truth
-            for pos in poss:
-                for neg in negs:
-                    data.append((q, pos, neg))
+            # poss = [label_to_ans_text[t] for t in d[2].split(' ')] # ground-truth
+            # cands = [label_to_ans_text[t] for t in d[3].split(' ')] # candidate-pool
+            poss = [t for t in d[2].split(' ')] # ground-truth
+            cands = [t for t in d[3].split(' ')] # candidate-pool
+            data.append((q, poss, cands))
     return data
 
 
@@ -81,6 +110,7 @@ def load_embd_weights(word2vec, vocab_size, embd_size, w2i):
 def padding(data, max_sent_len, pad_token):
     pad_len = max(0, max_sent_len - len(data))
     data += [pad_token] * pad_len
+    data = data[:max_sent_len]
     return data
 
 
