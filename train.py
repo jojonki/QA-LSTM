@@ -54,37 +54,38 @@ def loss_fn(pos_sim, neg_sim):
     return loss
 
 
-def train(model, data, optimizer, n_epochs=4, batch_size=2):
+def train(model, data, optimizer, n_epochs=4, batch_size=64):
     model.train()
     for epoch in range(n_epochs):
         print('epoch', epoch)
         random.shuffle(data) # TODO use idxies
-        for i in tqdm(range(0, len(data)-batch_size, batch_size)):
-            batch = data[i:i+batch_size]
-            q_batch = [d[0] for d in batch]
-            max_q_len = max([len(q) for q in q_batch])
-            q_batch = make_vector(q_batch, w2i, max_q_len)
+        for d in tqdm(data):
+            losses = []
+            q, pos, negs = d[0], d[1], d[2]
+            vec_q = make_vector([q], w2i, len(q))
+            vec_pos = make_vector([pos], w2i, len(pos))
+            pos_sim = model(vec_q, vec_pos)
 
-            pos_batch = [d[1] for d in batch]
-            max_pos_len = min(args.max_sent_len, max([len(p) for p in pos_batch]))
-            pos_batch = make_vector(pos_batch, w2i, max_pos_len)
-
-            # sample one negative candidate until getting plus loss value or reaching max sampling count
-            for neg_sampling_ct in range(50): # see 2.3 of insuranceQA's paper
-                neg_batch = [random.choice(d[2]) for d in batch] # choose one negative sample
-                max_neg_len = min(args.max_sent_len, max([len(n) for n in neg_batch]))
-                neg_batch = make_vector(neg_batch, w2i, max_neg_len)
-                pos_sim = model(q_batch, pos_batch)
-                neg_sim = model(q_batch, neg_batch)
+            rand_sampling_indices = np.random.permutation(np.arange(len(negs)))
+            for idx in rand_sampling_indices:
+                neg = negs[idx]
+                vec_neg = make_vector([neg], w2i, len(neg))
+                neg_sim = model(vec_q, vec_neg)
                 loss = loss_fn(pos_sim, neg_sim)
                 if loss.data[0] != 0:
-                    print('sampling_count=[{:d}], margin is less than m, loss={:.4f}'.format(neg_sampling_ct, loss.data[0]))
-                    # print('margin is less than m, lets update')
-                    break
+                    # print('sampling_count=[{:d}], margin is less than m, loss={:.4f}'.format(neg_sampling_ct, loss.data[0]))
+                    # batch.append((vec_q, vec_pos, vec_neg))
+                    losses.append(loss)
+                    if len(losses) >= batch_size:
+                        break
 
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+            if len(losses) != 0:
+                # print('batch_size=', len(losses))
+                loss = torch.mean(torch.stack(losses, 0).squeeze(), 0)
+                print(loss.data[0])
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
 
 
 def test(model, data):

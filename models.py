@@ -37,4 +37,4 @@ class QA_LSTM(nn.Module):
         q = torch.max(q, 1)[0] # (bs, 2H)
         a = torch.max(a, 1)[0] # (bs, 2H)
 
-        return torch.mean(self.cos(q, a)) # (bs,)
+        return self.cos(q, a) # (bs,)
