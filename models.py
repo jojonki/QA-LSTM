@@ -30,8 +30,11 @@ class QA_LSTM(nn.Module):
         q, _h = self.shared_lstm(q) # (bs, L, 2H)
         a, _h = self.shared_lstm(a) # (bs, L, 2H)
 
-        # mean/maxpooling
-        q = torch.mean(q, 1) # (bs, 2H)
-        a = torch.mean(a, 1) # (bs, 2H)
+        # mean
+        # q = torch.mean(q, 1) # (bs, 2H)
+        # a = torch.mean(a, 1) # (bs, 2H)
+        # maxpooling
+        q = torch.max(q, 1)[0] # (bs, 2H)
+        a = torch.max(a, 1)[0] # (bs, 2H)
 
         return torch.mean(self.cos(q, a)) # (bs,)

@@ -78,7 +78,7 @@ def train(model, data, optimizer, n_epochs=4, batch_size=2):
                 neg_sim = model(q_batch, neg_batch)
                 loss = loss_fn(pos_sim, neg_sim)
                 if loss.data[0] != 0:
-                    # print('loss:', loss.data[0])
+                    print('sampling_count=[{:d}], margin is less than m, loss={:.4f}'.format(neg_sampling_ct, loss.data[0]))
                     # print('margin is less than m, lets update')
                     break
 
