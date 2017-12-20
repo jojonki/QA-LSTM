@@ -59,33 +59,30 @@ def train(model, data, optimizer, n_epochs=4, batch_size=64):
     for epoch in range(n_epochs):
         print('epoch', epoch)
         random.shuffle(data) # TODO use idxies
-        for d in tqdm(data):
-            losses = []
+        losses = []
+        for i, d in enumerate(tqdm(data)):
             q, pos, negs = d[0], d[1], d[2]
             vec_q = make_vector([q], w2i, len(q))
             vec_pos = make_vector([pos], w2i, len(pos))
             pos_sim = model(vec_q, vec_pos)
 
-            rand_sampling_indices = np.random.permutation(np.arange(len(negs)))
-            for idx in rand_sampling_indices:
-                neg = negs[idx]
+            for _ in range(50):
+                neg = random.choice(negs)
                 vec_neg = make_vector([neg], w2i, len(neg))
                 neg_sim = model(vec_q, vec_neg)
                 loss = loss_fn(pos_sim, neg_sim)
                 if loss.data[0] != 0:
-                    # print('sampling_count=[{:d}], margin is less than m, loss={:.4f}'.format(neg_sampling_ct, loss.data[0]))
-                    # batch.append((vec_q, vec_pos, vec_neg))
                     losses.append(loss)
-                    if len(losses) >= batch_size:
-                        break
+                    break
 
-            if len(losses) != 0:
+            if len(losses) == batch_size or i == len(data) - 1:
                 # print('batch_size=', len(losses))
                 loss = torch.mean(torch.stack(losses, 0).squeeze(), 0)
                 print(loss.data[0])
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
+                losses = []
 
 
 def test(model, data):
